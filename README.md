@@ -34,7 +34,7 @@ A web application that allows users to search for sanctioned entities, assess ri
 1. Clone the repository:
 ```bash
 git clone 
-cd marcura-challenge
+cd sanctions-screening
 ```
 
 2. Clone the repository:
