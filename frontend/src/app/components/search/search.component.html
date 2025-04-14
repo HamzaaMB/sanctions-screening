@@ -1,0 +1,116 @@
+<!-- search.component.html -->
+<div class="search-section">
+  <div class="search-container mat-elevation-z2">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search Entities</mat-label>
+      <input matInput [(ngModel)]="searchQuery" placeholder="Type entity name or keyword..." class="search-input">
+    </mat-form-field>
+
+    <button mat-raised-button color="primary" (click)="searchSanctions()" class="search-button">
+      Search
+    </button>
+  </div>
+</div>
+<!-- No Results State -->
+<div *ngIf="hasSearched && sanctions.length === 0" class="no-results-container mat-elevation-z4">
+  <mat-icon class="no-results-icon">search_off</mat-icon>
+  <h3>No Results Found</h3>
+  <p>We couldn't find any entities matching "{{searchQuery}}"</p>
+  <button mat-stroked-button (click)="clearSearch()">
+    <mat-icon>refresh</mat-icon> Clear Search
+  </button>
+</div>
+
+<div *ngIf="sanctions.length > 0" class="table-container mat-elevation-z4">
+  <mat-table [dataSource]="sanctions" class="mat-elevation-z0">
+    <!-- Entity Column -->
+    <ng-container matColumnDef="entity">
+      <mat-header-cell *matHeaderCellDef> Entity </mat-header-cell>
+      <mat-cell *matCellDef="let entity"> {{ entity.target_type | titlecase }} </mat-cell>
+    </ng-container>
+
+    <!-- Source Column -->
+    <ng-container matColumnDef="source">
+      <mat-header-cell *matHeaderCellDef> Source </mat-header-cell>
+      <mat-cell *matCellDef="let entity">
+        <span class="source-badge" [class.eu]="entity.source === 'eu'" [class.ofac]="entity.source === 'ofac'">
+          {{ entity.source | uppercase }}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Matched Name Column -->
+    <ng-container matColumnDef="matchedName">
+      <mat-header-cell *matHeaderCellDef> Matched Name </mat-header-cell>
+      <mat-cell *matCellDef="let entity"> {{ entity.matched_name }} </mat-cell>
+    </ng-container>
+
+    <!-- Risk Score Column -->
+    <ng-container matColumnDef="riskScore">
+      <mat-header-cell *matHeaderCellDef> Risk Score </mat-header-cell>
+      <mat-cell *matCellDef="let entity">
+        <mat-progress-bar mode="determinate" [value]="entity.risk_score" [color]="getRiskColor(entity.risk_level)">
+        </mat-progress-bar>
+        <span class="score-text">{{ entity.risk_score }}%</span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Risk Level Column -->
+    <ng-container matColumnDef="riskLevel">
+      <mat-header-cell *matHeaderCellDef> Risk Level </mat-header-cell>
+      <mat-cell *matCellDef="let entity">
+        <span class="risk-badge" [class]="entity.risk_level">
+          {{ riskLabels[entity.risk_level] }}
+        </span>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Action Column -->
+    <ng-container matColumnDef="action">
+      <mat-header-cell *matHeaderCellDef> Action </mat-header-cell>
+      <mat-cell *matCellDef="let entity">
+        <button mat-raised-button color="primary" (click)="openModal(entity)">
+          <mat-icon>visibility</mat-icon> Review
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+
+  <mat-paginator [length]="totalResults" [pageSize]="pageSize" [pageIndex]="currentPage - 1"
+    (page)="onPageChange($event)" [pageSizeOptions]="[5, 10, 20]" aria-label="Select page">
+  </mat-paginator>
+</div>
+
+<!-- Modal Dialog -->
+<ng-template #modalTemplate>
+  <h2 mat-dialog-title>Review Entity</h2>
+  <mat-dialog-content>
+    <div class="modal-content">
+      <p><strong>Name:</strong> {{ selectedEntity?.matched_name }}</p>
+      <p><strong>Source:</strong> {{ selectedEntity?.source | uppercase }}</p>
+      <p><strong>Risk Score:</strong> {{ selectedEntity?.risk_score }}%</p>
+
+      <mat-form-field appearance="outline" class="risk-select">
+        <mat-label>Risk Category</mat-label>
+        <mat-select [(ngModel)]="selectedRisk">
+          <mat-option *ngFor="let r of riskCategories" [value]="r">
+            {{ riskLabels[r] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+  <div *ngIf="successMessage" class="modal-toast success">
+    {{ successMessage }}
+  </div>
+  <div *ngIf="errorMessage" class="modal-toast error">
+    {{ errorMessage }}
+  </div>
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="closeModal()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="saveRiskDecision()">Save</button>
+  </mat-dialog-actions>
+</ng-template>
