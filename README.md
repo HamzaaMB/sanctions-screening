@@ -73,7 +73,7 @@ The backend is a Django REST API providing sanctions search with fuzzy matching 
 - Fuzzy string matching with Python's difflib SequenceMatcher
 - Error handling with comprehensive logging
 
-## Frontend Implementation
+## Frontend Implementation
 
 ### Overview
 An Angular application providing an intuitive interface for searching entities and recording risk decisions.
